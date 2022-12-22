@@ -21,7 +21,7 @@ If you are trying to reverse a piece of commercial software goals can include:
 5. Identify if there are any security bugs
 6. Write 1337 0-day for Remote Code Execution 
 
-For both of the examples given, all of the desired outcomes have a different methodology required to solve the problem, and using the wrong methodology will waste a signifcant amount of time. For example, if the only goal is to identify if something is potentially malicious and should be blocked, once a reverser identifies any sort of covert communications with a remote server, that executable should be flagged and the reverse should move on. Any further work is wasted time, the goal has been reached. If the malware is selected for a more targeted RE later, there needs to be a specific end goal in mind. Without that, reversers can find themselves tearing apart a binary and labeling all the functions for no real reason than that they enjoy it.
+For both of the examples given, all of the desired outcomes have a different methodology required to solve the problem, and using the wrong methodology will waste a signifcant amount of time. For example, if the only goal is to identify if something is potentially malicious and should be blocked, once a reverser identifies any sort of covert communications with a remote server, that executable should be flagged and the reverser should move on. Any further work is wasted time, the goal has been reached. If the malware is selected for a more targeted RE later, there needs to be a specific end goal in mind. Without that, reversers can find themselves tearing apart a binary and labeling all the functions for no real reason than that they enjoy it.
 
 While the methodologies might change, in the vast majority of cases, the beginning steps will look the same. This first step in the methodology is often known as "triage". Triage is primarily using CLI tools to get the quickest understanding of an unknown binary. Dynamic analysis is any attempt at figuring out what a binary is doing by executing it and seeing what happens. Static analysis is any attempt to figure out what a binary does by looking at the code, whether it is in a compiled or decompiled form, and  
 
@@ -37,7 +37,7 @@ The magic of Nightmare is getting reps and sets in, and that is what you are abo
 
 1. First, we are going to start with a fun CTF challenge that will take us on a whirlwind tour of x86: [Challenge 1](csaw18_x86tour_pt1/)
 
-2. Many RE challenges fall into the category of CrackMe's. I love this tutorial from Nora Codes. [Crack Me Collection](https://github.com/NoraCodes/crackmescrackmes/). Work through them and you will know what is needed to solve 50% of CrackMes you find in most competitions. When you get bored, move on, or stop at the 4th challenge. Can't have you spending too much time in one place. 
+2. Many RE challenges fall into the category of CrackMe's. I love this [tutorial](https://nora.codes/tutorial/an-intro-to-x86_64-reverse-engineering/) from Nora Codes. [Crack Me Collection](https://github.com/NoraCodes/crackmes/). Work through them and you will know what is needed to solve 50% of CrackMes you find in most competitions. When you get bored, move on, or stop at the 4th challenge. Can't have you spending too much time in one place. 
 
 As a note, NoraCodes uses Radare for the examples, you should be using Ghidra. There is no major functional difference between the way the two work, but you should use Ghidra. (I should do Ghidra writeups of everything but... haven't had the time yet.)
 
