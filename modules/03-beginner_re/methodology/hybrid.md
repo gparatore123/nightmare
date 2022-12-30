@@ -12,7 +12,7 @@ The primary Dynamic Analysis tool we will be using is GDB and you will learn to 
 
 The hand in hand counterpart to Dynamic, static analysis is looking at various representations of the executable and deriving understanding from it. 
 
-The primary static tool we will be using is Ghidra, but occaisonally also tools like `objdump`. 
+The primary static tool we will be using is Ghidra, but occasionally also tools like `objdump`. 
 
 # Hybrid Analysis
 
