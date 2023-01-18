@@ -1,10 +1,10 @@
-# aslr/pie intro
+# ASLR/PIE Intro
 
-With exploiting binaries, there are various mitigations that you will face that will make it harder to exploit. Defeating them is usually just one step for actually gainning control over a program (assuming that the mitigation stands in your way). Since it is just something that stands in your way, and since for the modules I like to cover a new type of bug / exploitation technique, I didn't make a module dedicated to each of the mitigations you will see. However you still do see them (or some combination of the,) nearly everywhere through this project. So the purpose of these is to give you a brief explanation as to what they are.
+You will face various mitigations when trying to exploit binaries. Defeating them is usually just one step on the path to gaining control over a program. I didn't make a module dedicated to each of the mitigations you will see since they are just something that stands in your way, and the modules I like to cover, include a new type of bug / exploitation technique. However you still do see them, or some combination, nearly everywhere through this project. So the purpose of these is to give you a brief overview.
 
-So what is address space randomization (aslr)? Processes have memory. All of the memory addresses to each byte. Aslr randomization that in certain memory region such as the stack and the heap. This keeps us from knowing what the memory addresses are for certain regions of memory.
+So what is address space randomization (ASLR)? Processes have memory. All of the memory is addressable by a 32 or 64 bit number depending on your system. These will usually be displayed in a hexadecimal format. ASLR randomization can be applied to certain memory regions such as the stack and the heap. ASLR simply randomizes the starting locations of these region.
 
-For instance, let's take a look at the address of this one stack variable, one iteration of running this binary:
+For instance, let's take a look at the address of this stack variable, one iteration of running this binary:
 
 ```
 Breakpoint 1, 0x0000000000401161 in main ()
@@ -57,7 +57,7 @@ gef➤  x/g $rbp-0x18
 0x7fffabfee6f8:    0xa000000401050
 ```   
 
-We can see that for this iteration, the variable at `rbp-0x18` has the address `0x7fffabfee6f8`. Let's see what the address is on another iteration of running the binary:
+We can see that for this iteration, the variable at `rbp-0x18` has the address `0x7fffabfee6f8`. Let's see what the address is if we run the binary again:
 
 ```
 Breakpoint 1, 0x0000000000401161 in main ()
@@ -110,11 +110,11 @@ gef➤  x/g $rbp-0x18
 0x7ffcdc7caf68:    0xa000000401050
 ```
 
-This time we can see that the address is `0x7ffcdc7caf68`, so it has changed. Also one quick note, when you run a binary straight up in gdb, it can disable aslr in certain memory regions. The reason why aslr works here is I spawned the process, then attached it using pwntools.
+This time we can see that the address is `0x7ffcdc7caf68`, so it has changed. Also one quick note, when you run a binary straight up in gdb, it can disable ASLR in certain memory regions. ASLR works here because I spawned the process then attached to it using pwntools.
 
-Now know the addresses of various things in memory regions like the heap, stack, and libc (libc is where standard functions like `fgets` and `puts` live) can be extremely helpful if not necessary while attacking some targets. So what is the bypass to this mitigation?
+Now you should see why knowing the addresses of various things in memory regions like the heap, stack, and libc (libc is where standard functions like `fgets` and `puts` live) can be extremely helpful if not necessary while attacking some targets. So how can this mitigation be bypassed?
 
-The bypass is we leak an address from a memory region that we want to know what it's address space is. For this it might help to take a look at the memory mappings of a process with `vmmap`:
+We must somehow obtain the address of the desired memory region. One way to do this is by finding a leak of an address from the memory region that we are targeting. For this it might help to take a look at the memory mappings of a process with `vmmap`:
 
 ```
 gef➤  vmmap
@@ -143,11 +143,11 @@ Start              End                Offset             Perm Path
 0xffffffffff600000 0xffffffffff601000 0x0000000000000000 r-x [vsyscall]
 ```
 
-So here we can see various memory regions such as the `heap`, the `stack`, `libc`, and more. Thing is while the addresses in a memory space will change, the offset between the addresses themselves will not change. So if we leak a single address from a memory region that we know what is, we can just add the offset to whatever address we want to know. We can find this offset in gdb, since the offsets between two different memory addresses in the same memory region don't change. There are lots of different ways we can get an infoleak that you will see throughout this project. Also if we get an infoleak for let's say the `libc` region of memory, that is only good for the `libc` region of memory. We can't use that `libc` infoleak to figure out the address space for things like the `heap` or the `stack` (or vice versa).
+So here we can see various memory regions such as the `heap`, the `stack`, `libc`, and more. While the addresses in a memory space will change, the offset between the addresses themselves will not change. So if we leak an address from a memory region and can identify the offset, we can just add the offset to whatever address we want to know. We can find this offset in gdb, since the offsets between two memory addresses in the same memory region don't change. There are lots of ways we can get an infoleak that you will see throughout this project. For example if we get an infoleak for the `libc` region of memory, that is only good for the `libc` region of memory. We can't use that `libc` infoleak to figure out the address space for things like the `heap` or the `stack` (or vice versa).
 
-## pie
+## PIE
 
-Position Independent Executable (pie) is another binary mitigation extremely similar to aslr. It is basically aslr but for the actual binary's code / memory regions. For instance, let's take a look at a binary that is compiled without `pie`:
+Position Independent Executable (PIE) is another binary mitigation extremely similar to ASLR. It is basically ASLR but for the binary's code / memory regions. For instance, let's take a look at a binary that is compiled without `PIE`:
 
 ```
 gef➤  disas main
@@ -232,7 +232,7 @@ gef➤  x/i 0x401132
 => 0x401132 <main>:    push   rbp
 ```
 
-With pie, everything in the "binary's" memory regions is compiled to have an offset versus a fixed address. Each time the binary is run, the binary generates a random number known as a base. Then the address of everything becomes the base plus the offset. For this to make more since let's first look at the memory mapping:
+With PIE, everything in the "binary's" memory regions is compiled to have an offset versus a fixed address. Each time the binary is run, the binary generates a random number known as a base. Then the address of everything becomes the base plus the offset. For this to make more sense let's first look at the memory mapping:
 
 ```
 Start              End                Offset             Perm Path
@@ -269,7 +269,7 @@ When I say "binary's" memory regions I mean these regions specifically:
 0x0000000000404000 0x0000000000405000 0x0000000000003000 rw- /tmp/try
 ```
 
-Now let's see what the main function looks like when we compile it with pie:
+Now let's see what the main function looks like when we compile it with PIE:
 
 ```
 gef➤  disas main
@@ -354,9 +354,9 @@ Start              End                Offset             Perm Path
 0xffffffffff600000 0xffffffffff601000 0x0000000000000000 r-x [vsyscall]
 ```
 
-As we can see, pie has changed the memory addresses for the binary's memory spaces.
+As we can see, PIE has changed the memory addresses for the binary's memory spaces.
 
-Also one thing, pie can make it a bit annoying to set breakpoints. Luckily gef has a cool feature to help with this.
+Also one thing, PIE can make it a bit annoying to set breakpoints. Luckily gef has a cool feature to help with this.
 
 ```
 gef➤  disas main
@@ -449,4 +449,4 @@ gef➤
 
 As you see using the `pie b` and `pie run` commands, we were able to set a breakpoint for an offset.
 
-So as to how to defeat pie and know the address of this memory region, you defeat it the same way you would defeat aslr. You leak a single address from the memory region. Then since the offsets stay the same every time, you can figure out the address of anything in that memory region.
+So as to how to defeat PIE and know the address of this memory region, you defeat it the same way you would defeat ASLR. You leak a single address from the memory region. Then, since the offsets stay the same every time, you can figure out the address of anything in that memory region.
