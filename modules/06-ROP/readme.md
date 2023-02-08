@@ -25,9 +25,9 @@ When writing ROP chains, the best thing possible for us is that is the binary is
 
 For this section, we'll be going through some static binaries which will give us a lot to work with.
 
-1. [DCQuals19 Speedrun](07-bof-static/dcquals19_speedrun1/)
-2. [BKP16-SimpleCalc](07-bof-static/bkp16_simplecalc)
-3. [DCQuals16-Feedme](07-bof-static/dcquals16_feedme)
+1. [DCQuals19 Speedrun](07-bof_static/dcquals19_speedrun1/)
+2. [BKP16-SimpleCalc](07-bof_static/bkp16_simplecalc)
+3. [DCQuals16-Feedme](07-bof_static/dcquals16_feedme)
 
 # ROP Dynamically Compiled
 
@@ -40,18 +40,18 @@ There is also now much more concern about having the correct libc versions as yo
 
 For these writeups, your libc will probably be slightly different, so write the exploit for your local device, don't try to match the writeups' libc.
 
-1. [csaw17-svc](08-bof-dynamic/csaw17_svc)
-2. [fb19-overfloat](08-bof-dynamic/fb19_overfloat)
-3. [hs19-storytime](08-bof-dynamic/hs19_storytime)
-4. [csaw19-babyboi](08-bof-dynamic/csaw19_babyboi)
-5. [utc19-shellme](08-bof-dynamic/utc19_shellme)
+1. [csaw17-svc](08-bof_dynamic/csawquals17_svc)
+2. [fb19-overfloat](08-bof_dynamic/fb19_overfloat)
+3. [hs19-storytime](08-bof_dynamic/hs19_storytime)
+4. [csaw19-babyboi](08-bof_dynamic/csaw19_babyboi)
+5. [utc19-shellme](08-bof_dynamic/utc19_shellme)
 
 # Ret2System
 
 Also the name of a really cool company that teaches exploitation and writes sweet 0days, <https://ret2.io/> ret2system is a more specific versiion of ret2libc that hunts the system() call. 
 
 1. [asis17_marymorton](14-ret_2_system/asis17_marymorton)
-2. [hxp18_poorcanary](14-ret_2_system/hxp18_poorcanary)
+2. [hxp18_poorcanary](14-ret_2_system/hxp18_poorCanary)
 3. [tu_guestbook](14-ret_2_system/tu_guestbook)
 
 
