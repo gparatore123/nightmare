@@ -88,8 +88,8 @@ To figure out what mitigations are in place, use the "checksec" program. Once yo
 
 ### More Mitigations
 
-15. Read this [writeup on canaries](7.1-mitigation_canary/readme.md).
-16. Read this [writeup on NX](6.1-mitigation_nx/readme.md)
+15. Read this [writeup on canaries](https://github.com/guyinatuxedo/nightmare/tree/master/modules/7.1-mitigation_canary).
+16. Read this [writeup on NX](https://github.com/guyinatuxedo/nightmare/tree/master/modules/6.1-mitigation_nx)
 17. Learn how to defeat some mitigations with [Aviv's Unit 5 Notes](unit_05.md)
 
 Mostly, we are going to need to do some ROP, but that's for a later section.
