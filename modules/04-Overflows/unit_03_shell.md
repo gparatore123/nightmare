@@ -429,8 +429,8 @@ helloworld program.
 
 ``` asm
   ;;;  shell.asm
-  SECTION .data;data section to store string Hello, World\n
-  binsh:   db "/bin/sh",0x00 ;newline and null terminated 
+  SECTION .data;data section to store string /bin/sh
+  binsh:   db "/bin/sh",0x00 ;null terminated 
 
   SECTION .text; Code section
       global _start; Make label available to linker
@@ -498,7 +498,7 @@ Disassembly of section .text:
 user@si485H-base:demo$ objdump -d -M intel execve_fixedref
 ```
 
-The byte valus for the instructions are clearly listed, but we want the
+The byte values for the instructions are clearly listed, but we want the
 bytes and just the bytes. Fortunately, `readelf` allows us to look at
 particular segments in binary.
 
@@ -562,7 +562,7 @@ Now we need to convert this into a hex string which we can use
 $ bytes=$(readelf -x .text shell | grep "0x080" | tr -s " " | cut -d " " -f 3,4,5,6  | tr "\n" " " | sed "s/ //g" | sed "s/\.//g")
 $ echo $bytes
 6a0068a8900408bba890040889e1ba00000000b80b000000cd80bb00000000b801000000cd80
-$ echo $bytes | python -c "import sys; hex=sys.stdin.read().strip(); print ''.join('\\\\x%s%s'%(hex[i*2],hex[i*2+1]) for i in range(len(hex)/2))"
+$ echo $bytes | python -c "import sys; hex=sys.stdin.read().strip(); print(''.join('\\\\x%s%s'%(hex[i*2],hex[i*2+1]) for i in range(int(len(hex)/2))))"
 \x6a\x00\x68\xa8\x90\x04\x08\xbb\xa8\x90\x04\x08\x89\xe1\xba\x00\x00\x00\x00\xb8\x0b\x00\x00\x00\xcd\x80\xbb\x00\x00\x00\x00\xb8\x01\x00\x00\x00\xcd\x80
 ```
 
@@ -570,9 +570,9 @@ I'm using a bit of python magic for this, but it works. Now, we could
 printf this string to see that we are indeed capturing the encoding:
 
 ``` example
-$ echo $bytes | python -c "import sys; hex=sys.stdin.read().strip(); print ''.join('\\\\x%s%s'%(hex[i*2],hex[i*2+1]) for i in range(len(hex)/2))"
+$ echo $bytes | python -c "import sys; hex=sys.stdin.read().strip(); print(''.join('\\\\x%s%s'%(hex[i*2],hex[i*2+1]) for i in range(int(len(hex)/2))))"
 \x6a\x00\x68\xa8\x90\x04\x08\xbb\xa8\x90\x04\x08\x89\xe1\xba\x00\x00\x00\x00\xb8\x0b\x00\x00\x00\xcd\x80\xbb\x00\x00\x00\x00\xb8\x01\x00\x00\x00\xcd\x80
-$ hexbytes=$(echo $bytes | python -c "import sys; hex=sys.stdin.read().strip(); print ''.join('\\\\x%s%s'%(hex[i*2],hex[i*2+1]) for i in range(len(hex)/2))")
+$ hexbytes=$(echo $bytes | python -c "import sys; hex=sys.stdin.read().strip(); print(''.join('\\\\x%s%s'%(hex[i*2],hex[i*2+1]) for i in range(int(len(hex)/2))))")
 $ printf "$hexbytes"
 jh??????
         ̀??̀
@@ -591,7 +591,7 @@ the text segement of a binary into a hex string.
 #!/bin/bash
 
 bytes=$(readelf -x .text $1 | grep "0x080" | tr -s " " | cut -d " " -f 3,4,5,6  | tr "\n" " " | sed "s/ //g" | sed "s/\.//g")
-echo $bytes | python -c "import sys; hex=sys.stdin.read().strip(); print ''.join('\\\\x%s%s'%(hex[i*2],hex[i*2+1]) for i in range(len(hex)/2))"
+echo $bytes | python -c "import sys; hex=sys.stdin.read().strip(); print(''.join('\\\\x%s%s'%(hex[i*2],hex[i*2+1]) for i in range(int(len(hex)/2))))"
 ```
 
 ``` example
