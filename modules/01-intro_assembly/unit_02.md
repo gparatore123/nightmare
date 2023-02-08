@@ -407,7 +407,7 @@ If your output is in AT&T syntax, then issue the command:
 
 To have gdb output in Intel syntax.
 
-I'll mostly work with gdb dissambled output because it's more nicely
+I'll mostly work with gdb disassembled output because it's more nicely
 formatted, IMHO. Our next task is understanding what the hell is going
 on?!?!
 
@@ -426,8 +426,8 @@ Instruction Set Computing, which has the advantage that all instructions
 and arguments are always the same size, 32 bits.
 
 x86 is a CISC instruction set, or Complex Instruction Set Computing, and
-it has the property that instruction sizes are not contest. They can
-very between 8 bits and 64 bits and more, depending on the instruction.
+it has the property that instruction sizes are not consistent. They can
+vary between 8 bits and 64 bits and more, depending on the instruction.
 You may wonder, why in the world would anything be designed this way?
 The answer is market inertia and backwards capability. As Intel chips
 dominated the market, more and more binary was x86.
@@ -466,14 +466,14 @@ If we take a few operations from our sample code:
    0x08048420 <+3>: and    esp,0xfffffff0
 ```
 
-The first command `push` takes one argument an places that argument on
+The first command `push` takes one argument and places that argument on
 the stack, adjusting the stack pointer. In this case, it pushes the
 value of the base pointer stored in the register `ebp` onto the stack.
 The second command, `mov` takes two arguments, and will *move* a value
 from one location to another, much like assignment. The second command
 moves the value in the stack pointer `esp` and saves it in the base
-pointer `ebp`. Finally, the last command is a bitwise and operation
-taking two arguments. It will perform a bitwise and on the `<dst>` with
+pointer `ebp`. Finally, the last command is a bitwise operation and
+takes two arguments. It will perform a bitwise `and` on the `<dst>` with
 the `<src>` and store the result in `<dst>`. In this context, the `and`
 command aligns the stack pointer with the lowest 4-bit value. The 4-bit
 alignment is due to an old bug in the division unit of the x86
@@ -487,7 +487,7 @@ are used for in more detail.
 
 Registers are special storage spaces on the processor that store the
 state of the program. Some registers are used for general purpose
-storage to store intermediate storage, while others are used to keep
+storage to store intermediate values, while others are used to keep
 track of the execution state, e.g., like what is the next instruction.
 
 Here are the standard registers you will encounter. There are some
@@ -505,7 +505,7 @@ others, but we'll explain them when we come across them:
 -   `edi`: 32-bit general purpose registers mostly used for loading and
     storing
 
-Each of the general purpose registers can be referenced either by there
+Each of the general purpose registers can be referenced either by their
 full 32-bit value or by some subset of that, such as the first 8 bits or
 second 8 bits. For example, `eax` refers to the 32-bit general
 registers, but `ax` refers to the last 16 bits of the `eax` register and
@@ -516,15 +516,15 @@ storing, we may reference different parts.
 
 ### The Base Pointer and Stack Pointer
 
-Two registers will be referenced more than any other: the base and stack
+Two registers will be referenced more than any other: the base (`ebp`) and stack (`esp`)
 pointer. These registers maintain the memory reference state for the
 current execution, with reference to the current function frame. A
-function frame is portion of memory on the stack that stores the
-information for a current functions execution, including local data and
-return addresses. The base pointer define the top and bottom of the
+function frame is a portion of memory on the stack that stores the
+information for a current function's execution, including local data and
+return addresses. The base pointer defines the top and bottom of the
 function frame.
 
-The structure of a function frame is like such
+The structure of a function frame is like so
 
 ``` example
            <- 4 bytes ->
@@ -546,18 +546,18 @@ esp+0x4 ->|             |
 
 Moving from higher addresses to lower addresses, the top of the frame
 stores the function arguments. These are typically referenced in
-positive offsets of `ebp` register. For example, the first argument is
+positive offsets of the `ebp` register. For example, the first argument is
 at `ebp+0x8` moving upwards from there.
 
 The second item in the function frame is the return address at
 `ebp+0x4`. The value stored in this memory is where the next instruction
 is after the return statement, or what instruction occurs after the call
-to this insturction completes. We will spend a LOT OF TIME talking about
+to this instruction completes. We will spend a LOT OF TIME talking about
 this later.
 
-Finally, there is the saved `ebp`, this is the address where the last
+Finally, there is the saved `ebp`, this is the address of the last
 base pointer for the calling function. We need to save this value so
-that the calling function's stack frame can be restored onced this
+that the calling function's stack frame can be restored once this
 function completes.
 
 The stack pointer references the bottom of the stack, the lowest address
@@ -574,16 +574,17 @@ function call. It has information about the local variables of the
 function as well as to which function (or specifically which instruction
 address) to jump to once this function returns.
 
-A stack frame is managed by two registers: ebp and esp. The ebp
+A stack frame is managed by two registers: `ebp` and `esp`. The `ebp`
 register, or base pointer, is at the top of the stack frame (higher
-addresses) and the esp regiser, or stack pointer, is at the bototm of
+addresses) and the `esp` register, or stack pointer, is at the bottom of
 the stack frame (lower addresses). To make this even more confusing, we
-sometimes refer to the esp being the "top of the stack," but it is
-really the bottom since it is in lower address space.
+sometimes refer to the `esp` being the "top of the stack" because it represents
+the top of the stack in a traditional stack data structure, but it is
+really in lower address space.
 
 When we do memory references within a function, we are almost always
 describing the address of that memory as a positive or negative offset
-of esp or ebp.
+of `esp` or `ebp`.
 
 For example, a typical stack frame looks like so:
 
@@ -613,7 +614,7 @@ is the return address and the arguments to the function.
 
 We often describe x86 processors as stack machines. The reason for this
 is that the execution model is built around a stack. As functions are
-called, there infomration is pushed on to the stack, and as functions
+called, there information is pushed on to the stack, and as functions
 return, they are popped off of the stack.
 
 For example, in this code:
@@ -666,8 +667,8 @@ called and is pushed on the stack.
 ```
 
 At this point, it is important to note that the entire state of
-functions ot complete, `main` and `foo`, have not been forgotten. They
-are still there. Once `baz` returns and is poped, `foo` can return and
+the functions, `main` and `foo`, have not been forgotten. They
+are still there. Once `baz` returns and is popped, `foo` can return and
 be popped, and finally, `main` returns and is popped.
 
 This stack-based model of execution is directly applied in the function
@@ -682,7 +683,7 @@ that is what we'll look at next.
 ## Allocating a new stack frame
 
 The first set of instructions in our main function is for managing the
-stack frame for the current function. In our code, this looks like this:
+stack frame for the current function. In our code, it looks like this:
 
 ``` example
  0x08048426 <+0>:	push   ebp
@@ -693,18 +694,17 @@ stack frame for the current function. In our code, this looks like this:
 
 Let's first analyze the first four instructions. The push instruction
 will push a value onto the stack, and in this case it is the previous
-base pointer, ie, the saved based pointer. Next, the base pointer is set
-to the stack pointer (`mov`). Next, subtracting from the stack pointer
-allocates the rest of the stack frame, which is 0x24 bytes long or 36
-bytes (don't forget about hex).
+base pointer. Next, the base pointer is set to the stack pointer (`mov`).
+Next, subtracting from the stack pointer allocates the rest of the stack 
+frame, which is 0x24 bytes long or 36 bytes (don't forget about hex).
 
 The need for these instructions is so that the previous stack frame, the
 calling function's stack frame, can be reconstructed. To understand
 this, recall the layout of a function's stack frame. The `ebp` register
 references the saved value for the base pointer of the calling stack.
 Once the function returns, memory is deallocated by adjusting the stack
-pointer to the current base pointer; setting the base pointer to the
-saved base pointer; and then performing a *leave* by popping off the
+pointer to the current base pointer, setting the base pointer to the
+saved base pointer, and then performing a *leave* by popping off the
 saved base pointer and return address, setting the current instruction
 pointer to the return address.
 
@@ -765,7 +765,7 @@ Why is this useful? Well, it isn't, at least, not for our programs. This is used
 for handling position independent compilation, which is necessary for dynamic
 libraries. The ability to load certain program-counter points comes more
 naturally in x86_64, but since we are compiling 32-bit on a 64-bit machine
-(e.g., the `-m32` and `-no-pie` option to compilation), `gcc` goes ahead and adds in these
+(e.g., the `-m32` and `-no-pie` option to compilation), `gcc` adds in these
 functions where needed. They have no real effect on the 32-bit programs we are
 analyzing, so you can essentially ignore them.
 
@@ -782,8 +782,8 @@ instructions:
 Since we reached the function via a `call`, the return address is pushed onto
 the stack. `esp` is reference that return address. The `mov` instruction, along
 with the deference of `DWORD PTR [esp]`, saves the return address into the `ebx`
-register. This way of quickly saving an address actually will come in handy
-later when we start writing shell code.
+register. This way of quickly saving an address will come in handy later when 
+we start writing shell code.
 
 Finally, the `mov` instruction at the end of the `printhello` instruction is
 also connected to this compiler addition. Since the instruction of the start of
@@ -811,7 +811,7 @@ First the `leave` instruction will do two things:
 1.  `mov esp,ebp` : set the stack pointer to the base pointer, essential
     deallocating the local variables in the function
 2.  `pop ebp` : after the move, the top of the stack is the saved base
-    pointer, so by poping the value at the top of the stack into ebp, we
+    pointer, so by popping the value at the top of the stack into `ebp`, we
     are reseting the base pointer to the saved one.
 
 Visually this would look like this:
@@ -840,7 +840,7 @@ Visually this would look like this:
 
 At this point the stack is almost back to its state prior to the
 function call. The last thing to do is to pop off the return value and
-set the instruction pointer (i.e., the current execution point) to the
+set the instruction pointer (i.e. the current execution point) to the
 return value. Conceptually, we can see that `ret` does both those in one
 step:
 
@@ -868,15 +868,15 @@ esp-> | return adr  |      '-------------'
 ## Referencing, De-Referencing, and Setting Memory
 
 The next set of instructions we will observe initializes the memory of
-the stack. Let's switch back to the C-code to see this in c first before
+the stack. Let's switch back to the C-code to see this in C before
 we look at it in assembly.
 
 ``` c
     char hello[15]="Hello, World!\n";
 ```
 
-The string "Hello World!\\n" is set on the stack in 15 byte character
-array. In assembly, this looks like this.
+The string "Hello World!\\n" is set on the stack in a 15 byte character
+array. In assembly, it looks like this.
 
 ``` example
  0x08048438 <+18>:	mov    DWORD PTR [ebp-0x1b],0x6c6c6548
@@ -921,7 +921,7 @@ The next two instructions are a bit different:
  0x0804845a <+52>:	mov    DWORD PTR [ebp-0xc],eax
 ```
 
-=lea= stands for *load effective address* and is a short cut for to do a
+=lea= stands for *load effective address* and is a short cut to do a
 bit a math and calculate a pointer offset and store it. If we look at
 what's next in the C-program, we see that it is setting up the for-loop.
 
@@ -931,16 +931,16 @@ what's next in the C-program, we see that it is setting up the for-loop.
 
 The first part of the for loop is initializing the pointer `p` to
 reference the start of the string `hello`. From the previous code, the
-start of the string hello is at address offset `ebp-0x1b` and we want to
+start of the string `hello` is at address offset `ebp-0x1b` and we want to
 set that address to the value of `p`. This is a two step process:
 
-1.  The actually address must be computed using addition from `esp` and
+1.  The actual address must be computed using addition from `esp` and
     stored. `lea eax,[ebp-0x1b]` will calculate the address and store it
     in `eax`.
 2.  The value in `eax` must be stored in the memory reserved for `p`,
     which is at address `ebp-0xc`, the move command accomplishes that.
 
-At this point, everything is set up. And for reference, remeber that the
+At this point, everything is set up. And for reference, remember that the
 address of `p` is at `ebp-0xc`.
 
 ## Loops, Jumps, and Condition Testing
@@ -965,9 +965,9 @@ follow the execution at this point by following the jumps.
 ```
 
 A `jmp` instruction changes the instruction pointer to the destination
-specified. It is not conditioned, it is explicit hard jump. Following
-that jump in the code, we find the following three instructions which is
-testing the exit condition from the loop.
+specified. It is not conditional, it is a hard jump. Following that jump 
+in the code, we find the following three instructions which are testing 
+the exit condition from the loop.
 
 ``` example
   0x08048478 <+82>:	mov    eax,DWORD PTR [ebp-0xc]
@@ -983,7 +983,7 @@ byte in the string, so we want to retrieve that `char` byte by
 dereferencing `p` further, this time with a `BYTE PTR`.
 
 The problem is, we just placed one byte into a 4-byte register that used
-to have other bytes into it. We need to do some cleanup. 1The cleanup
+to have other bytes in it. We need to do some cleanup. The cleanup
 operation is `movzx` instructions. The `movzx` instruction with the
 `BYTE PTR` will *zero extend* the byte into `eax`. This means, that the
 remaining 3 bytes of the register will be set to zero. At this point, we
@@ -991,16 +991,15 @@ have one byte snuggly stored in the `eax` register that is the `char`
 referenced by `p`. We now need to check if that byte is NULL.
 
 That test occurs `test al,al` which compares to registers in a number of
-ways. Here we are testing the `al` register which is the lower 8-bits=
+ways. Here we are testing the `al` register which is the lower 8-bits
 of `eax`, where we stored the deference of `p`. The results of the test,
 greater then, less than, equal, not zero, etc. are stored in a set of
 bit flags. The one we care about is the `ZF` flag or the *zero flag*. If
 `al` is zero then `ZF` is set to 1 which would be the case when `p`
 references the end of the `hello` string.
 
-The `jne` command says to *jump when not equal to zero*. If it is the
-case that `al` is zero, do not jump, otherwise continue to the address
-and continue the loop.
+The `jne` command says to *jump when not equal to zero*. If `al` is zero, 
+do not jump, otherwise continue to the address and continue the loop.
 
 ## Function Calls
 
@@ -1016,14 +1015,14 @@ If we investigate the loop body, we find the following instructions:
    0x08048471 <+75>:	add    esp,0x10
 ```
 
-The first set of instructions, much like the test before, is to
+The first set of instructions, much like the `test` before, is to
 deference the pointer `p`.
 
-1.  load the value of `p`, a memory address, into `eax`
+1.  Load the value of `p`, a memory address, into `eax`
 2.  Read the byte referenced at `p` into the lower 8-bits of `eax`
-3.  zero out the remaining bits of `eax` leaving only lower 8-bits
+3.  Zero out the remaining bits of `eax` leaving only lower 8-bits
 
-At this point, `eax` stores a value like 0x0000048 (i.e, 'H') where the
+At this point, `eax` stores a value like 0x0000048 (i.e. 'H') where the
 lowest byte is the character of interest, and the remaining bytes are 0.
 
 The new instruction is `movsx`, which stands for sign extend. The two
@@ -1035,10 +1034,10 @@ parity bit, and extends it to the front of the register where a 4-byte
 signed value should be, thus completing the cast.
 
 The next instruction should be familiar, it is a subtraction on the
-stack pointer. This allocate space on the stack, providing us a location
+stack pointer. This allocates space on the stack, providing us a location
 to write the argument to the function we are about to call. We allocate
 more space than we need in case the function does some stack
-minipulation, and then we finally `push` our argument onto the stack.
+manipulation, and then we finally `push` our argument onto the stack.
 
 The next operation is a `call` which will execute the function
 `putchar`, conveniently told to us by gdb. Once that function completes,
