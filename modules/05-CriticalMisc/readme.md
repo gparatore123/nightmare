@@ -25,7 +25,7 @@ Just do one of these, they are are a bit rare, but good to know they exist. If y
 
 Partial overwrites are where we get after the low values of an address. They are most commmonly used for ASLR defeat, but are also useful when we only can overwrite part of the return address.
 
-1. [tu17_vulnchat2](15-partial_overwrite/tu17_vulnchat2)
+1. [tu17_vulnchat2](15-partial_overwrite/tuctf17_vulnchat2)
 
 Just do one of these, they are are a bit rare, but good to know they exist. If you want another example here are two, but just move on.
 
