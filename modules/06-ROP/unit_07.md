@@ -411,7 +411,7 @@ Dump of assembler code for function vuln:
    0x080484f6 <+33>:    mov    eax,DWORD PTR [ebp-0xc]
    0x080484f9 <+36>:    lea    edx,[eax+0x1]
    0x080484fc <+39>:    mov    DWORD PTR [ebp-0xc],edx
-   0x080484ff <+42>:    lea    edx,[ebp-0x2c]
+   0x080484ff <+42>:    lea    edx,[ebp-0x2c]hoppersroppers
    0x08048502 <+45>:    mov    DWORD PTR [esp+0x8],edx
    0x08048506 <+49>:    mov    DWORD PTR [esp+0x4],eax
    0x0804850a <+53>:    mov    DWORD PTR [esp],0x804860e
@@ -895,13 +895,13 @@ void main(int argc, char * argv[]){
 }
 ```
 
-This time we need to first call bin<sub>sh</sub>() with magicbeef being
-deadbeef and then we need to call bad() afterward to get our shell.
+This time we need to first call `bin_sh()` with magicbeef being
+deadbeef and then we need to call `bad()` afterward to get our shell.
 This might seem like no problem, at first, but once we try it out,
 you'll see where the challenge arises.
 
 Starting with the easy part, we can look at what the stack should be to
-properly call bin<sub>sh</sub>:
+properly call `bin_sh`:
 
 ``` example
 |      0xdeadbeef       |
@@ -910,10 +910,10 @@ properly call bin<sub>sh</sub>:
 ```
 
 We overwrite the return address of vuln() with the address of
-bin<sub>sh</sub>() where its argument is 0xdeadbeef. In the
+`bin_sh()` where its argument is 0xdeadbeef. In the
 last example, we didn't consider the return address of the function we
 jumped to, but this time we have to. What is the next function we call?
-bad(). So what we really need for the stack is to look like this.
+`bad()`. So what we really need for the stack is to look like this.
 
 ``` example
 |     <addr pwn>        |
@@ -922,8 +922,8 @@ bad(). So what we really need for the stack is to look like this.
 |     <addr bin_sh>     |
 ```
 
-If you follow the stack, the argument to bin<sub>sh</sub>() is
-0xdeadbeef and its return address is bad(). The argument to bad() is
+If you follow the stack, the argument to `bin_sh()` is
+0xdeadbeef and its return address is `bad()`. The argument to `bad()` is
 `pwn`, and the return address for bad is 0xdeadbeef, which doesn't
 matter because at this point we have the shell.
 
@@ -962,7 +962,7 @@ this.
 ```
 
 The slot for bad's return address is already being used for the argument
-to bin<sub>sh</sub>. We're hosed. Worse, consider what would happen in
+to `bin_sh`. We're hosed. Worse, consider what would happen in
 this code example where one of the functions needs to take **two**
 arguments:
 
@@ -1017,7 +1017,7 @@ the functions requires *two* arguments. Looks like our luck ran out and
 this is impossible, but just in case, let's try looking at the stack
 anyway.
 
-Starting with the first function add<sub>bin</sub> and its two
+Starting with the first function `add_bin` and its two
 arguments which should be followed by `add_sh`, we'd need something like
 this:
 
@@ -1029,14 +1029,14 @@ this:
 ```
 
 That's possible, but then what happens: we've reached an impasse.
-add<sub>sh</sub>() takes one argument and the way the stack is aligned,
+`add_sh()` takes one argument and the way the stack is aligned,
 that argument is 0x0badf00d. That's just not what we need --- we need
 0xdeadbeef.
 
 It would seem like this is impossible, but think about what we could do
 if we were able to clear the stack. Suppose we had a gadget or little
 function that only did pop;pop;ret then we could jump there instead of
-add<sub>sh</sub>() and clear out the stack before the next return.
+`add_sh()` and clear out the stack before the next return.
 Something like the following:
 
 ``` example
@@ -1050,12 +1050,12 @@ Something like the following:
 |     <addr add_bin>     |
 ```
 
-If you follow the function chain, after ad<sub>bin</sub>() is called
+If you follow the function chain, after `add_bin()` is called
 with arguments 0xcafebade and 0x0badf00d, the next function to run is a
 gadget that pops 0xcafebabe and 0x0badf00d off the stack. When the
-gadget returns, the next address on the stack is add<sub>sh</sub>() with
-the argument 0xdeadbeef. The return address of add<sub>sh</sub>() is
-bad(), and thus the exploit completes.
+gadget returns, the next address on the stack is `add_sh()` with
+the argument 0xdeadbeef. The return address of `add_sh()` is
+`bad()`, and thus the exploit completes.
 
 # ROP Gadgets
 
