@@ -340,7 +340,7 @@ $    python3 ROPgadget.py --binary speedrun-001 | grep ": syscall"
 0x000000000040129c : syscall
 ```
 
-Keep in mind that our ROP chain consists of addresses to instructions, and not the instructions themselves. So we will overwrite the return address with the first gadget of the ROP chain, and when it returns it will keep on going down the chain until we get our shell. Also for moving values into registers, we will store those values on the stack in the ROP Chain, and they will just be popped off into the regisets. Putting it all together we get the following exploit:
+Keep in mind that our ROP chain consists of addresses to instructions, and not the instructions themselves. So we will overwrite the return address with the first gadget of the ROP chain, and when it returns it will keep on going down the chain until we get our shell. Also for moving values into registers, we will store those values on the stack in the ROP Chain, and they will just be popped off into the registers. Putting it all together we get the following exploit:
 
 ```
 from pwn import *
