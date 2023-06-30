@@ -411,7 +411,7 @@ Dump of assembler code for function vuln:
    0x080484f6 <+33>:    mov    eax,DWORD PTR [ebp-0xc]
    0x080484f9 <+36>:    lea    edx,[eax+0x1]
    0x080484fc <+39>:    mov    DWORD PTR [ebp-0xc],edx
-   0x080484ff <+42>:    lea    edx,[ebp-0x2c]hoppersroppers
+   0x080484ff <+42>:    lea    edx,[ebp-0x2c]
    0x08048502 <+45>:    mov    DWORD PTR [esp+0x8],edx
    0x08048506 <+49>:    mov    DWORD PTR [esp+0x4],eax
    0x0804850a <+53>:    mov    DWORD PTR [esp],0x804860e
